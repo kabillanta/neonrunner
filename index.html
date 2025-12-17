@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NEON RUNNER 2077</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-cyan: #00f2ff;
+            --neon-pink: #ff0055;
+            --neon-yellow: #ffee00;
+            --bg-color: #050505;
+        }
+        
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: var(--bg-color); 
+            font-family: 'Orbitron', sans-serif;
+            user-select: none; /* Prevent text selection */
+        }
+
+        /* --- CRT Scanline Effect (The "Retro" TV Look) --- */
+        #scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        #vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.9) 100%);
+            pointer-events: none;
+            z-index: 998;
+        }
+
+        /* --- UI Overlay Container --- */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        /* --- HUD (Heads Up Display) --- */
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            padding: 30px 50px;
+            text-transform: uppercase;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+        }
+
+        /* Color Coding */
+        .cyan { color: var(--neon-cyan); text-shadow: 0 0 20px var(--neon-cyan); }
+        .pink { color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink); }
+        .yellow { color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow); }
+
+        /* --- Screens (Start / Game Over) --- */
+        .screen {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: auto; /* Enable clicking buttons */
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px 80px;
+            border: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 30px var(--neon-cyan), inset 0 0 30px rgba(0, 242, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: none; /* Hidden by default */
+        }
+
+        .screen.active { display: block; }
+
+        h1 {
+            font-size: 4rem;
+            margin: 0 0 20px 0;
+            color: #fff;
+            text-shadow: 4px 4px 0px var(--neon-pink);
+            font-style: italic;
+        }
+
+        p { color: #ccc; font-size: 1.2rem; margin-bottom: 30px; line-height: 1.6; }
+
+        .key {
+            display: inline-block;
+            border: 1px solid #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 0.9rem;
+            margin: 0 4px;
+        }
+
+        button {
+            background: transparent;
+            color: var(--neon-cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 15px 40px;
+            border: 2px solid var(--neon-cyan);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        button:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 40px var(--neon-cyan);
+        }
+
+        /* Turbo Indicator */
+        #turbo-alert {
+            position: absolute;
+            bottom: 10%;
+            width: 100%;
+            text-align: center;
+            color: var(--neon-yellow);
+            font-size: 2rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px var(--neon-yellow);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="scanlines"></div>
+    <div id="vignette"></div>
+
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div class="stat-box cyan">
+                <span class="stat-label">DISTANCE</span>
+                <span class="stat-value"><span id="distVal">0</span><span style="font-size:1rem">m</span></span>
+            </div>
+            <div class="stat-box pink">
+                <span class="stat-label">VELOCITY</span>
+                <span class="stat-value"><span id="veloVal">0</span><span style="font-size:1rem">km/h</span></span>
+            </div>
+        </div>
+        <div id="turbo-alert">TURBO ENGAGED</div>
+    </div>
+
+    <div id="start-screen" class="screen active">
+        <h1>NEON RUNNER</h1>
+        <p>Avoid the Obstacles.<br>
+        Use <span class="key">←</span> <span class="key">→</span> to steer.<br>
+        Hold <span class="key">SHIFT</span> for Turbo Boost.</p>
+        <button onclick="startGame()">INITIATE</button>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+        <h1 style="color:var(--neon-pink); text-shadow: 4px 4px 0px var(--neon-cyan);">CRITICAL FAILURE</h1>
+        <p>DISTANCE TRAVELED: <span id="final-score" style="color:white; font-weight:bold;">0</span>m</p>
+        <button onclick="resetGame()">REBOOT SYSTEM</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- Game Config ---
+        const CONFIG = {
+            laneWidth: 7.5,
+            baseSpeed: 2.0,
+            turboSpeed: 4.0,
+            baseFOV: 75,
+            turboFOV: 95
+        };
+
+        let scene, camera, renderer, composer, player;
+        let obstacles = [];
+        let particles = [];
+        
+        // Game State
+        let isPlaying = false;
+        let isTurbo = false;
+        let currentSpeed = 0;
+        let targetX = 0;
+        let distance = 0;
+
+        // UI References
+        const distUI = document.getElementById('distVal');
+        const veloUI = document.getElementById('veloVal');
+        const turboUI = document.getElementById('turbo-alert');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreUI = document.getElementById('final-score');
+
+        init();
+
+        function init() {
+            // Setup Scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000000, 0.0035);
+
+            camera = new THREE.PerspectiveCamera(CONFIG.baseFOV, window.innerWidth/window.innerHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
+            document.body.appendChild(renderer.domElement);
+
+            // --- 1. Infinite Grid Floor ---
+            const gridGeo = new THREE.PlaneGeometry(200, 4000, 40, 400);
+            const gridMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true, transparent: true, opacity: 0.3 });
+            const floor = new THREE.Mesh(gridGeo, gridMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.z = -1000;
+            scene.add(floor);
+
+            // --- 2. Player (Futuristic Car Shape) ---
+            const playerGeo = new THREE.BoxGeometry(2.5, 1, 4);
+            const playerMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); // White core
+            player = new THREE.Mesh(playerGeo, playerMat);
+            player.position.set(0, 0.5, 0);
+            
+            // Player Outline/Glow
+            const edgeGeo = new THREE.EdgesGeometry(playerGeo);
+            const edgeMat = new THREE.LineBasicMaterial({ color: 0x00f2ff });
+            const wireframe = new THREE.LineSegments(edgeGeo, edgeMat);
+            player.add(wireframe);
+            
+            // Engine Light
+            const engineLight = new THREE.PointLight(0x00f2ff, 10, 20);
+            engineLight.position.set(0, 1, 2);
+            player.add(engineLight);
+            
+            scene.add(player);
+
+            // --- 3. Initial Obstacles ---
+            spawnObstacles(200);
+
+            // --- 4. Star Particles ---
+            const starGeo = new THREE.BufferGeometry();
+            const starCount = 2000;
+            const posArray = new Float32Array(starCount * 3);
+            for(let i=0; i<starCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 400;
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const starMat = new THREE.PointsMaterial({ size: 0.5, color: 0xffffff });
+            const stars = new THREE.Points(starGeo, starMat);
+            stars.position.y = 50;
+            scene.add(stars);
+
+            // --- 5. Post Processing (Bloom) ---
+            const renderScene = new RenderPass(scene, camera);
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0;
+            bloomPass.strength = 1.2;
+            bloomPass.radius = 0.5;
+            
+            composer = new EffectComposer(renderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
+
+            // Controls
+            window.addEventListener('keydown', handleInput);
+            window.addEventListener('keyup', (e) => { if(e.key === "Shift") isTurbo = false; });
+            window.addEventListener('resize', onWindowResize);
+            
+            // Expose functions to global scope for HTML buttons
+            window.startGame = () => {
+                startScreen.classList.remove('active');
+                isPlaying = true;
+                currentSpeed = CONFIG.baseSpeed;
+            };
+            
+            window.resetGame = () => {
+                // Reset Position
+                player.position.set(0, 0.5, 0);
+                targetX = 0;
+                distance = 0;
+                
+                // Reset Obstacles
+                obstacles.forEach(o => scene.remove(o));
+                obstacles = [];
+                spawnObstacles(200);
+                
+                // UI Reset
+                gameOverScreen.classList.remove('active');
+                isPlaying = true;
+                currentSpeed = CONFIG.baseSpeed;
+            }
+
+            animate();
+        }
+
+        function handleInput(e) {
+            if (!isPlaying) return;
+            if (e.key === "ArrowLeft") targetX -= CONFIG.laneWidth;
+            if (e.key === "ArrowRight") targetX += CONFIG.laneWidth;
+            if (e.key === "Shift") isTurbo = true;
+            
+            targetX = THREE.MathUtils.clamp(targetX, -15, 15);
+        }
+
+        function spawnObstacles(count) {
+            for(let i = 0; i < count; i++) {
+                const height = Math.random() * 5 + 2;
+                const obsGeo = new THREE.ConeGeometry(1.5, height, 4);
+                const obsMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+                const obs = new THREE.Mesh(obsGeo, obsMat);
+                
+                const lanes = [-15, -7.5, 0, 7.5, 15];
+                const lane = lanes[Math.floor(Math.random() * lanes.length)];
+                
+                // Spawn ahead of player
+                const zPos = -(i * 60) - 200 - player.position.z; 
+                
+                obs.position.set(lane, height/2, zPos);
+                scene.add(obs);
+                obstacles.push(obs);
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function gameOver() {
+            isPlaying = false;
+            currentSpeed = 0;
+            finalScoreUI.innerText = Math.floor(distance);
+            gameOverScreen.classList.add('active');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isPlaying) {
+                // 1. Calculate Speed & Turbo
+                const targetSpeed = isTurbo ? CONFIG.turboSpeed : CONFIG.baseSpeed;
+                currentSpeed = THREE.MathUtils.lerp(currentSpeed, targetSpeed, 0.05);
+                
+                // 2. Move Player (Logic: Player moves -Z, but we simulate infinite world)
+                player.position.z -= currentSpeed;
+                distance += currentSpeed;
+
+                // 3. Smooth Lane Switch
+                player.position.x = THREE.MathUtils.lerp(player.position.x, targetX, 0.1);
+                // Banking effect
+                player.rotation.z = (targetX - player.position.x) * -0.05;
+
+                // 4. Camera Follow
+                // Pull back FOV when turbo
+                const targetFOV = isTurbo ? CONFIG.turboFOV : CONFIG.baseFOV;
+                camera.fov = THREE.MathUtils.lerp(camera.fov, targetFOV, 0.05);
+                camera.updateProjectionMatrix();
+
+                camera.position.z = player.position.z + 15;
+                camera.position.x = player.position.x * 0.3;
+                camera.position.y = 5;
+                camera.lookAt(player.position.x, 0, player.position.z - 20);
+
+                // 5. Collision Check
+                const playerBox = new THREE.Box3().setFromObject(player);
+                // Shrink hitbox slightly to be forgiving
+                playerBox.expandByScalar(-0.5); 
+
+                for (let obs of obstacles) {
+                    const obsBox = new THREE.Box3().setFromObject(obs);
+                    if (playerBox.intersectsBox(obsBox)) {
+                        gameOver();
+                        break; // Stop checking
+                    }
+                }
+
+                // 6. Infinite Obstacle Logic
+                // If obstacles are too far behind, move them ahead
+                obstacles.forEach(obs => {
+                    if (obs.position.z > player.position.z + 20) {
+                        obs.position.z -= 12000; // Recycle far ahead
+                        // Reshuffle lane
+                        const lanes = [-15, -7.5, 0, 7.5, 15];
+                        obs.position.x = lanes[Math.floor(Math.random() * lanes.length)];
+                    }
+                });
+            }
+
+            // HUD Update
+            distUI.innerText = Math.floor(distance);
+            // Fake Velocity calculation based on game speed
+            veloUI.innerText = Math.floor(currentSpeed * 100) + Math.floor(Math.random() * 5);
+            
+            turboUI.style.opacity = isTurbo ? 1 : 0;
+
+            composer.render();
+        }
+    </script>
+</body>
+</html>
