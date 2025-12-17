@@ -511,21 +511,21 @@
             composer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        function gameOver() {
-            isPlaying = false;
-            currentSpeed = 0;
-            finalScoreUI.innerText = Math.floor(distance);
-            gameOverScreen.classList.add('active');
-        }
-
+function gameOver() {
+    Audio.playCrash(); // Play explosion
+    isPlaying = false;
+    currentSpeed = 0;
+    finalScoreUI.innerText = Math.floor(distance);
+    gameOverScreen.classList.add('active');
+}
         function animate() {
             requestAnimationFrame(animate);
 
             if (isPlaying) {
                 // 1. Calculate Speed & Turbo
                 const targetSpeed = isTurbo ? CONFIG.turboSpeed : CONFIG.baseSpeed;
-                currentSpeed = THREE.MathUtils.lerp(currentSpeed, targetSpeed, 0.05);
-
+currentSpeed = THREE.MathUtils.lerp(currentSpeed, targetSpeed, 0.05);
+                Audio.updateEngine(currentSpeed);
                 // 2. Move Player (Logic: Player moves -Z, but we simulate infinite world)
                 player.position.z -= currentSpeed;
                 distance += currentSpeed;
@@ -584,3 +584,4 @@
 </body>
 
 </html>
+
