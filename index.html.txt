@@ -1,3 +1,0 @@
-> incognito chat app session Id (see whatsapp)
-> talk and learn with AI after uploading AI 
-> change AutoEDA to React 
