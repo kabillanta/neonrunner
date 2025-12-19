@@ -2,32 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEON RUNNER 2077</title>
+    <title>NEON RUNNER 2077: OVERDRIVE</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --neon-cyan: #00f2ff;
             --neon-pink: #ff0055;
+            --neon-purple: #bc13fe;
             --neon-yellow: #ffee00;
             --bg-color: #050505;
         }
-
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: var(--bg-color);
+        
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: var(--bg-color); 
             font-family: 'Orbitron', sans-serif;
             user-select: none;
-            /* Prevent text selection */
         }
 
-        /* --- CRT Scanline Effect (The "Retro" TV Look) --- */
+        /* Loading Overlay */
+        #loading {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--neon-cyan);
+            font-size: 2rem;
+            transition: opacity 0.5s;
+        }
+
         #scanlines {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0; width: 100vw; height: 100vh;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             background-size: 100% 2px, 3px 100%;
             pointer-events: none;
@@ -36,22 +47,15 @@
 
         #vignette {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, transparent 50%, rgba(0, 0, 0, 0.9) 100%);
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.9) 100%);
             pointer-events: none;
             z-index: 998;
         }
 
-        /* --- UI Overlay Container --- */
         #ui-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             z-index: 100;
             display: flex;
             flex-direction: column;
@@ -59,7 +63,6 @@
             pointer-events: none;
         }
 
-        /* --- HUD (Heads Up Display) --- */
         .hud-top {
             display: flex;
             justify-content: space-between;
@@ -85,43 +88,24 @@
             font-weight: 900;
         }
 
-        /* Color Coding */
-        .cyan {
-            color: var(--neon-cyan);
-            text-shadow: 0 0 20px var(--neon-cyan);
-        }
+        .cyan { color: var(--neon-cyan); text-shadow: 0 0 20px var(--neon-cyan); }
+        .pink { color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink); }
 
-        .pink {
-            color: var(--neon-pink);
-            text-shadow: 0 0 20px var(--neon-pink);
-        }
-
-        .yellow {
-            color: var(--neon-yellow);
-            text-shadow: 0 0 20px var(--neon-yellow);
-        }
-
-        /* --- Screens (Start / Game Over) --- */
         .screen {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
             pointer-events: auto;
-            /* Enable clicking buttons */
             background: rgba(0, 0, 0, 0.85);
             padding: 40px 80px;
             border: 2px solid var(--neon-cyan);
             box-shadow: 0 0 30px var(--neon-cyan), inset 0 0 30px rgba(0, 242, 255, 0.2);
             backdrop-filter: blur(10px);
             display: none;
-            /* Hidden by default */
         }
 
-        .screen.active {
-            display: block;
-        }
+        .screen.active { display: block; }
 
         h1 {
             font-size: 4rem;
@@ -131,12 +115,7 @@
             font-style: italic;
         }
 
-        p {
-            color: #ccc;
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
+        p { color: #ccc; font-size: 1.2rem; margin-bottom: 30px; line-height: 1.6; }
 
         .key {
             display: inline-block;
@@ -146,6 +125,7 @@
             color: #fff;
             font-size: 0.9rem;
             margin: 0 4px;
+            background: rgba(255,255,255,0.1);
         }
 
         button {
@@ -165,27 +145,28 @@
         button:hover {
             background: var(--neon-cyan);
             color: #000;
-            box-shadow: 0 0 40px var(--neon-cyan);
+            box-shadow: 0 0 50px var(--neon-cyan);
         }
 
-        /* Turbo Indicator */
         #turbo-alert {
             position: absolute;
-            bottom: 10%;
+            bottom: 15%;
             width: 100%;
             text-align: center;
             color: var(--neon-yellow);
-            font-size: 2rem;
+            font-size: 3rem;
             font-weight: 900;
-            text-shadow: 0 0 20px var(--neon-yellow);
+            font-style: italic;
+            text-shadow: 0 0 30px var(--neon-pink);
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: opacity 0.1s;
+            letter-spacing: 10px;
         }
     </style>
 </head>
-
 <body>
 
+    <div id="loading">LOADING SYSTEM...</div>
     <div id="scanlines"></div>
     <div id="vignette"></div>
 
@@ -200,21 +181,21 @@
                 <span class="stat-value"><span id="veloVal">0</span><span style="font-size:1rem">km/h</span></span>
             </div>
         </div>
-        <div id="turbo-alert">TURBO ENGAGED</div>
+        <div id="turbo-alert">NITROUS ENGAGED</div>
     </div>
 
     <div id="start-screen" class="screen active">
         <h1>NEON RUNNER</h1>
         <p>Avoid the Obstacles.<br>
-            Use <span class="key">←</span> <span class="key">→</span> to steer.<br>
-            Hold <span class="key">SHIFT</span> for Turbo Boost.</p>
-        <button onclick="startGame()">INITIATE</button>
+        Use <span class="key">←</span> <span class="key">→</span> to steer.<br>
+        Hold <span class="key">SHIFT</span> for Turbo Boost.</p>
+        <button id="btn-start">INITIATE</button>
     </div>
 
     <div id="game-over-screen" class="screen">
         <h1 style="color:var(--neon-pink); text-shadow: 4px 4px 0px var(--neon-cyan);">CRITICAL FAILURE</h1>
         <p>DISTANCE TRAVELED: <span id="final-score" style="color:white; font-weight:bold;">0</span>m</p>
-        <button onclick="resetGame()">REBOOT SYSTEM</button>
+        <button id="btn-restart">REBOOT SYSTEM</button>
     </div>
 
     <script type="importmap">
@@ -231,277 +212,186 @@
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { RGBShiftShader } from 'three/addons/shaders/RGBShiftShader.js';
 
         // --- Game Config ---
         const CONFIG = {
             laneWidth: 7.5,
             baseSpeed: 2.0,
-            turboSpeed: 4.0,
+            turboSpeed: 5.5,
             baseFOV: 75,
-            turboFOV: 95
+            turboFOV: 110
         };
 
         let scene, camera, renderer, composer, player;
+        let rgbShiftPass;
         let obstacles = [];
+        let buildings = [];
         let particles = [];
-
-        // Game State
+        let sunMesh;
+        let floor;
+        
         let isPlaying = false;
         let isTurbo = false;
         let currentSpeed = 0;
         let targetX = 0;
         let distance = 0;
+        let frameCount = 0;
 
-        // UI References
         const distUI = document.getElementById('distVal');
         const veloUI = document.getElementById('veloVal');
         const turboUI = document.getElementById('turbo-alert');
         const startScreen = document.getElementById('start-screen');
         const gameOverScreen = document.getElementById('game-over-screen');
         const finalScoreUI = document.getElementById('final-score');
+        const loadingScreen = document.getElementById('loading');
 
-
-        // --- AUDIO SYSTEM (Retro Synthesizer) ---
-        const Audio = {
-            ctx: null,
-            engineOsc: null,
-            engineGain: null,
-
-            init: function () {
-                // Create Audio Context on first user interaction
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                this.ctx = new AudioContext();
-
-                // Setup Engine Sound (Low Drone)
-                this.engineOsc = this.ctx.createOscillator();
-                this.engineGain = this.ctx.createGain();
-
-                this.engineOsc.type = 'sawtooth';
-                this.engineOsc.frequency.value = 100;
-                this.engineGain.gain.value = 0.05; // Low volume
-
-                // Filter to make it sound muffled/distant
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.value = 400;
-
-                this.engineOsc.connect(filter);
-                filter.connect(this.engineGain);
-                this.engineGain.connect(this.ctx.destination);
-                this.engineOsc.start();
-            },
-
-            updateEngine: function (speed) {
-                if (!this.ctx) return;
-                // Pitch goes up with speed
-                // Speed ranges roughly 2.0 to 4.5
-                this.engineOsc.frequency.rampToValueAtTime(
-                    100 + (speed * 40),
-                    this.ctx.currentTime + 0.1
-                );
-            },
-
-            playTurbo: function () {
-                if (!this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(200, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.5);
-
-                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.5);
-            },
-
-            playCrash: function () {
-                if (!this.ctx) return;
-                // Create Noise Buffer for Explosion
-                const bufferSize = this.ctx.sampleRate * 1.0; // 1 second
-                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1;
-                }
-
-                const noise = this.ctx.createBufferSource();
-                noise.buffer = buffer;
-
-                const gain = this.ctx.createGain();
-                gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
-
-                noise.connect(gain);
-                gain.connect(this.ctx.destination);
-                noise.start();
-
-                // Stop engine sound
-                this.engineGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
-            },
-
-            stopEngine: function () {
-                if (this.engineGain) {
-                    this.engineGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
-                }
-            },
-
-            resumeEngine: function () {
-                if (this.engineGain) {
-                    this.engineGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.5);
-                }
-            }
-        };
-        init();
+        // Initialize the game
+        try {
+            init();
+        } catch (error) {
+            console.error(error);
+            alert("Error loading game modules. Check console.");
+        }
 
         function init() {
-            // Setup Scene
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x000000, 0.0015);
+            scene.fog = new THREE.FogExp2(0x120024, 0.0025);
+            scene.background = new THREE.Color(0x050505);
 
-            camera = new THREE.PerspectiveCamera(CONFIG.baseFOV, window.innerWidth / window.innerHeight, 0.1, 1000);
-
+            camera = new THREE.PerspectiveCamera(CONFIG.baseFOV, window.innerWidth/window.innerHeight, 0.1, 2000);
+            
             renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
             document.body.appendChild(renderer.domElement);
 
-            // --- 1. Infinite Grid Floor ---
-            const gridGeo = new THREE.PlaneGeometry(200, 100000, 40, 4000);
-
-            const gridMat = new THREE.MeshBasicMaterial({
-                color: 0x00f2ff,
-                wireframe: true,
-                transparent: true,
-                opacity: 0.3
-            });
-
-            const floor = new THREE.Mesh(gridGeo, gridMat);
+            // --- Objects ---
+            // Sun
+            const sunGeo = new THREE.CircleGeometry(400, 64);
+            const sunMat = new THREE.MeshBasicMaterial({ color: 0xff0055, transparent: true, fog: false });
+            sunMesh = new THREE.Mesh(sunGeo, sunMat);
+            sunMesh.position.set(0, 100, -900);
+            scene.add(sunMesh);
+            
+            // Floor
+            const gridGeo = new THREE.PlaneGeometry(2000, 2000, 100, 100);
+            const gridMat = new THREE.MeshBasicMaterial({ color: 0xbc13fe, wireframe: true, transparent: true, opacity: 0.15 });
+            floor = new THREE.Mesh(gridGeo, gridMat);
             floor.rotation.x = -Math.PI / 2;
-
-            // Center it far ahead so you start at the beginning of the strip
-            floor.position.z = -45000;
-
             scene.add(floor);
 
-            // --- 2. Player (Futuristic Car Shape) ---
-            const playerGeo = new THREE.BoxGeometry(2.5, 1, 4);
-            const playerMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); // White core
-            player = new THREE.Mesh(playerGeo, playerMat);
-            player.position.set(0, 0.5, 0);
+            const planeGeo = new THREE.PlaneGeometry(2000, 2000);
+            const planeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const solidFloor = new THREE.Mesh(planeGeo, planeMat);
+            solidFloor.rotation.x = -Math.PI / 2;
+            solidFloor.position.y = -0.5;
+            scene.add(solidFloor);
 
-            // Player Outline/Glow
-            const edgeGeo = new THREE.EdgesGeometry(playerGeo);
-            const edgeMat = new THREE.LineBasicMaterial({ color: 0x00f2ff });
+            // Player
+            player = new THREE.Group();
+            const bodyGeo = new THREE.BoxGeometry(2.5, 0.5, 4.5);
+            const bodyMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.5;
+            player.add(body);
+            
+            const edgeGeo = new THREE.EdgesGeometry(bodyGeo);
+            const edgeMat = new THREE.LineBasicMaterial({ color: 0x00f2ff, linewidth: 2 });
             const wireframe = new THREE.LineSegments(edgeGeo, edgeMat);
-            player.add(wireframe);
+            body.add(wireframe);
 
-            // Engine Light
-            const engineLight = new THREE.PointLight(0x00f2ff, 10, 20);
+            const engineLight = new THREE.PointLight(0x00f2ff, 50, 25);
             engineLight.position.set(0, 1, 2);
             player.add(engineLight);
-
+            
             scene.add(player);
 
-            // --- 3. Initial Obstacles ---
-            spawnObstacles(200);
+            // Initial Spawns
+            spawnObstacles(30);
+            spawnBuildings(40);
 
-            // --- 4. Star Particles ---
+            // Particles
             const starGeo = new THREE.BufferGeometry();
-            const starCount = 2000;
+            const starCount = 3000;
             const posArray = new Float32Array(starCount * 3);
-            for (let i = 0; i < starCount * 3; i++) {
-                posArray[i] = (Math.random() - 0.5) * 400;
+            for(let i=0; i<starCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 600;
+                if(i % 3 === 1) posArray[i] = Math.random() * 200;
             }
             starGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-            const starMat = new THREE.PointsMaterial({ size: 0.5, color: 0xffffff });
+            const starMat = new THREE.PointsMaterial({ size: 0.7, color: 0xffffff });
             const stars = new THREE.Points(starGeo, starMat);
-            stars.position.y = 50;
             scene.add(stars);
 
-            // --- 5. Post Processing (Bloom) ---
+            // Post Processing
             const renderScene = new RenderPass(scene, camera);
             const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
             bloomPass.threshold = 0;
-            bloomPass.strength = 1.2;
+            bloomPass.strength = 1.5;
             bloomPass.radius = 0.5;
+
+            rgbShiftPass = new ShaderPass(RGBShiftShader);
+            rgbShiftPass.uniforms['amount'].value = 0.0015;
 
             composer = new EffectComposer(renderer);
             composer.addPass(renderScene);
             composer.addPass(bloomPass);
+            composer.addPass(rgbShiftPass);
 
-            // Controls
+            // --- Event Listeners ---
             window.addEventListener('keydown', handleInput);
-            window.addEventListener('keyup', (e) => { if (e.key === "Shift") isTurbo = false; });
-            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('keyup', (e) => { if(e.key === "Shift") isTurbo = false; });
+            window.addEventListener('resize', onWindowResize); // The fixed line
 
-            // Expose functions to global scope for HTML buttons
-            window.startGame = () => {
-                startScreen.classList.remove('active');
+            // Connect Buttons
+            document.getElementById('btn-start').addEventListener('click', startGameLogic);
+            document.getElementById('btn-restart').addEventListener('click', resetGameLogic);
 
-                // Initialize Audio (Triggers only once)
-                if (!Audio.ctx) Audio.init();
-                else Audio.resumeEngine(); // Resume if restarting
-
-                isPlaying = true;
-                currentSpeed = CONFIG.baseSpeed;
-            };
-
-            window.resetGame = () => {
-                // Reset Position
-                player.position.set(0, 0.5, 0);
-                targetX = 0;
-                distance = 0;
-
-                // Reset Obstacles
-                obstacles.forEach(o => scene.remove(o));
-                obstacles = [];
-                spawnObstacles(200);
-
-                // UI Reset
-                gameOverScreen.classList.remove('active');
-                isPlaying = true;
-                currentSpeed = CONFIG.baseSpeed;
-            }
+            // Remove loading screen
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => loadingScreen.style.display = 'none', 500);
 
             animate();
+        }
+
+        // --- Game Logic Functions ---
+
+        function startGameLogic() {
+            startScreen.classList.remove('active');
+            isPlaying = true;
+            currentSpeed = CONFIG.baseSpeed;
+        }
+
+        function resetGameLogic() {
+            player.position.set(0, 0, 0);
+            targetX = 0;
+            distance = 0;
+            
+            obstacles.forEach(o => scene.remove(o));
+            buildings.forEach(b => scene.remove(b));
+            obstacles = [];
+            buildings = [];
+            spawnObstacles(30);
+            spawnBuildings(40);
+            
+            gameOverScreen.classList.remove('active');
+            isPlaying = true;
+            currentSpeed = CONFIG.baseSpeed;
         }
 
         function handleInput(e) {
             if (!isPlaying) return;
             if (e.key === "ArrowLeft") targetX -= CONFIG.laneWidth;
             if (e.key === "ArrowRight") targetX += CONFIG.laneWidth;
-
-            if (e.key === "Shift") {
-                if (!isTurbo) Audio.playTurbo(); // Play sound
-                isTurbo = true;
-            }
-
+            if (e.key === "Shift") isTurbo = true;
             targetX = THREE.MathUtils.clamp(targetX, -15, 15);
         }
-        function spawnObstacles(count) {
-            for (let i = 0; i < count; i++) {
-                const height = Math.random() * 5 + 2;
-                const obsGeo = new THREE.ConeGeometry(1.5, height, 4);
-                const obsMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
-                const obs = new THREE.Mesh(obsGeo, obsMat);
 
-                const lanes = [-15, -7.5, 0, 7.5, 15];
-                const lane = lanes[Math.floor(Math.random() * lanes.length)];
-
-                // Spawn ahead of player
-                const zPos = -(i * 60) - 200 - player.position.z;
-
-                obs.position.set(lane, height / 2, zPos);
-                scene.add(obs);
-                obstacles.push(obs);
-            }
-        }
-
+        // THIS IS THE FUNCTION THAT WAS MISSING
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -509,78 +399,171 @@
             composer.setSize(window.innerWidth, window.innerHeight);
         }
 
-function gameOver() {
-    Audio.playCrash(); // Play explosion
-    isPlaying = false;
-    currentSpeed = 0;
-    finalScoreUI.innerText = Math.floor(distance);
-    gameOverScreen.classList.add('active');
-}
+        function spawnObstacles(count) {
+            for(let i = 0; i < count; i++) {
+                const obsGeo = new THREE.ConeGeometry(1, 4, 4);
+                const obsMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+                const obs = new THREE.Mesh(obsGeo, obsMat);
+                
+                const edges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(obsGeo), 
+                    new THREE.LineBasicMaterial({ color: 0xffffff })
+                );
+                obs.add(edges);
+
+                const lanes = [-15, -7.5, 0, 7.5, 15];
+                const lane = lanes[Math.floor(Math.random() * lanes.length)];
+                
+                // Ensure player exists before checking position
+                const playerZ = player ? player.position.z : 0;
+                const zPos = playerZ - 100 - (i * 50);
+                
+                obs.position.set(lane, 2, zPos);
+                obs.rotation.y = Math.PI / 4;
+                scene.add(obs);
+                obstacles.push(obs);
+            }
+        }
+
+        function spawnBuildings(count) {
+            for(let i=0; i<count; i++) {
+                const height = 20 + Math.random() * 60;
+                const geo = new THREE.BoxGeometry(15, height, 15);
+                const mat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                const building = new THREE.Mesh(geo, mat);
+                
+                const edges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(geo),
+                    new THREE.LineBasicMaterial({ color: 0x3300aa, transparent: true, opacity: 0.3 })
+                );
+                building.add(edges);
+
+                const isLeft = Math.random() > 0.5;
+                const xPos = isLeft ? -40 - Math.random() * 30 : 40 + Math.random() * 30;
+                const zPos = -Math.random() * 1000;
+
+                building.position.set(xPos, height/2, zPos);
+                scene.add(building);
+                buildings.push(building);
+            }
+        }
+
+        function spawnExhaust() {
+            if(frameCount % 3 === 0) { 
+                const geo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+                const mat = new THREE.MeshBasicMaterial({ color: isTurbo ? 0xff0055 : 0x00f2ff });
+                const p = new THREE.Mesh(geo, mat);
+                p.position.copy(player.position);
+                p.position.z += 2; 
+                p.position.y = 0.5;
+                scene.add(p);
+                particles.push({ mesh: p, life: 1.0 });
+            }
+        }
+
+        function gameOver() {
+            isPlaying = false;
+            currentSpeed = 0;
+            finalScoreUI.innerText = Math.floor(distance);
+            gameOverScreen.classList.add('active');
+            rgbShiftPass.uniforms['amount'].value = 0.0015;
+        }
+
         function animate() {
             requestAnimationFrame(animate);
+            frameCount++;
 
             if (isPlaying) {
-                // 1. Calculate Speed & Turbo
                 const targetSpeed = isTurbo ? CONFIG.turboSpeed : CONFIG.baseSpeed;
-currentSpeed = THREE.MathUtils.lerp(currentSpeed, targetSpeed, 0.05);
-                Audio.updateEngine(currentSpeed);
-                // 2. Move Player (Logic: Player moves -Z, but we simulate infinite world)
+                currentSpeed = THREE.MathUtils.lerp(currentSpeed, targetSpeed, 0.05);
+                
                 player.position.z -= currentSpeed;
                 distance += currentSpeed;
 
-                // 3. Smooth Lane Switch
                 player.position.x = THREE.MathUtils.lerp(player.position.x, targetX, 0.1);
-                // Banking effect
                 player.rotation.z = (targetX - player.position.x) * -0.05;
 
-                // 4. Camera Follow
-                // Pull back FOV when turbo
                 const targetFOV = isTurbo ? CONFIG.turboFOV : CONFIG.baseFOV;
                 camera.fov = THREE.MathUtils.lerp(camera.fov, targetFOV, 0.05);
-                camera.updateProjectionMatrix();
-
-                camera.position.z = player.position.z + 15;
-                camera.position.x = player.position.x * 0.3;
-                camera.position.y = 5;
-                camera.lookAt(player.position.x, 0, player.position.z - 20);
-
-                // 5. Collision Check
-                const playerBox = new THREE.Box3().setFromObject(player);
-                // Shrink hitbox slightly to be forgiving
-                playerBox.expandByScalar(-0.5);
-
-                for (let obs of obstacles) {
-                    const obsBox = new THREE.Box3().setFromObject(obs);
-                    if (playerBox.intersectsBox(obsBox)) {
-                        gameOver();
-                        break; // Stop checking
-                    }
+                
+                camera.position.z = player.position.z + 12;
+                camera.position.y = 6;
+                camera.position.x = player.position.x * 0.5;
+                
+                if(isTurbo) {
+                    camera.position.x += (Math.random() - 0.5) * 0.2;
+                    camera.position.y += (Math.random() - 0.5) * 0.2;
+                    rgbShiftPass.uniforms['amount'].value = 0.004; 
+                } else {
+                    rgbShiftPass.uniforms['amount'].value = 0.0015;
                 }
 
-                // 6. Infinite Obstacle Logic
-                // If obstacles are too far behind, move them ahead
+                camera.lookAt(player.position.x * 0.2, 0, player.position.z - 20);
+                camera.updateProjectionMatrix();
+
+                floor.position.z = Math.floor(player.position.z / 20) * 20;
+
+                sunMesh.position.z = player.position.z - 900;
+                sunMesh.position.x = player.position.x * 0.1;
+
                 obstacles.forEach(obs => {
                     if (obs.position.z > player.position.z + 20) {
-                        obs.position.z -= 12000; // Recycle far ahead
-                        // Reshuffle lane
+                        obs.position.z = player.position.z - 1000 - Math.random() * 500;
                         const lanes = [-15, -7.5, 0, 7.5, 15];
                         obs.position.x = lanes[Math.floor(Math.random() * lanes.length)];
                     }
                 });
+
+                buildings.forEach(b => {
+                    if (b.position.z > player.position.z + 50) {
+                        b.position.z = player.position.z - 1000 - Math.random() * 500;
+                    }
+                });
+
+                spawnExhaust();
+                for(let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+                    p.life -= 0.05;
+                    p.mesh.scale.setScalar(p.life);
+                    p.mesh.rotation.z += 0.1;
+                    if(p.life <= 0) {
+                        scene.remove(p.mesh);
+                        particles.splice(i, 1);
+                    }
+                }
+
+                // Physics / Collision Detection
+                // Create a slightly smaller hitbox for the player to be fair
+                const playerBox = new THREE.Box3();
+                const hitboxSize = new THREE.Vector3(1.5, 2.0, 3.5); // Width, Height, Depth (smaller than mesh)
+                // Player position is at Y=0, but mesh is slightly up. Center hitbox at Y=1 to ensure overlap.
+                const hitboxCenter = player.position.clone();
+                hitboxCenter.y = 1.0; 
+                playerBox.setFromCenterAndSize(hitboxCenter, hitboxSize);
+
+                for (let obs of obstacles) {
+                    const obsBox = new THREE.Box3().setFromObject(obs);
+                    // Shrink obstacle hitbox slightly
+                    obsBox.expandByScalar(-0.2);
+                    
+                    if (playerBox.intersectsBox(obsBox)) {
+                        gameOver();
+                        break; 
+                    }
+                }
             }
 
-            // HUD Update
             distUI.innerText = Math.floor(distance);
-            // Fake Velocity calculation based on game speed
-            veloUI.innerText = Math.floor(currentSpeed * 100) + Math.floor(Math.random() * 5);
-
-            turboUI.style.opacity = isTurbo ? 1 : 0;
+            veloUI.innerText = Math.floor(currentSpeed * 120) + Math.floor(Math.random() * 5);
+            
+            if(isTurbo) {
+                turboUI.style.opacity = (Math.floor(Date.now() / 100) % 2 === 0) ? 1 : 0.5; 
+            } else {
+                turboUI.style.opacity = 0;
+            }
 
             composer.render();
         }
     </script>
 </body>
-
 </html>
-
-
