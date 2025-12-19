@@ -311,7 +311,7 @@
             scene.add(player);
 
             // Initial Spawns
-            spawnObstacles(30);
+            spawnObstacles(15);
             spawnBuildings(40);
 
             // Particles
@@ -375,7 +375,7 @@
             buildings.forEach(b => scene.remove(b));
             obstacles = [];
             buildings = [];
-            spawnObstacles(30);
+            spawnObstacles(15);
             spawnBuildings(40);
             
             gameOverScreen.classList.remove('active');
